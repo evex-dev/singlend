@@ -18,16 +18,34 @@ import { safeJsonParse } from "../utils/safeJsonParse.ts";
 import { findRoute } from "../utils/findRoute.ts";
 import type { Context } from "@hono/hono";
 
+/**
+ * @class Singlend
+ * @classdesc Multiple operations on a single endpoint with zod 🚀
+ */
 export class Singlend<Routes extends AbstractRoutes = BlankRoutes> {
 	private forceStrictSchema = false;
 	public routes: AbstractRoutes = [];
 
+	/**
+	 * @description Create a new instance of Singlend
+	 * @param {Object} [options]
+	 * @param {boolean} [options.forceStrictSchema=true] - Force the zod schema to be strict
+	 */
 	constructor({
 		forceStrictSchema = true,
+	}: {
+		forceStrictSchema?: boolean;
 	}) {
 		this.forceStrictSchema = forceStrictSchema;
 	}
 
+	/**
+	 * @description Add a new route to the singlend
+	 * @param type - The type of the route
+	 * @param queryScheme - The zod schema for the query
+	 * @param handler - The handler for the route
+	 * @returns The same instance of Singlend, with the new route added
+	 */
 	public on<
 		QuerySchemeType extends ZodSchema,
 		ReturnType extends JSONValue,
@@ -75,9 +93,19 @@ export class Singlend<Routes extends AbstractRoutes = BlankRoutes> {
 			}),
 	} as const;
 
-	public middleware(): MiddlewareHandler {
+	/**
+	 * @description Middleware to handle singlend request
+	 * @param {Object} [options]
+	 * @param {string[]} [options.methods=["POST"]] - List of methods to handle
+	 * @returns {MiddlewareHandler}
+	 */
+	public middleware({
+		methods = ["POST"],
+	}: {
+		methods?: string[];
+	}): MiddlewareHandler {
 		return async (c, next) => {
-			if (c.req.method !== "POST") {
+			if (!methods.includes(c.req.method)) {
 				await next();
 				return;
 			}
