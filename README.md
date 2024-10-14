@@ -1,2 +1,3 @@
 # singlend
-Multiple operations on a single endpoint 🚀
+
+Multiple operations on a single endpoint with zod 🚀
