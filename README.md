@@ -58,11 +58,12 @@ fetch("/api/singlend", {
 		query: {
 			iconUrl: "dafault.png",
 		},
-	})
+	}),
 });
 ```
 
-More: [https://jsr.io/@evex/singlend/doc/~/Singlend](https://jsr.io/@evex/singlend/doc/~/Singlend)
+More:
+[https://jsr.io/@evex/singlend/doc/~/Singlend](https://jsr.io/@evex/singlend/doc/~/Singlend)
 
 ## ToDo
 
