@@ -50,6 +50,18 @@ singlend
 app.use("/api/singlend", singlend.middleware());
 ```
 
+```ts
+fetch("/api/singlend", {
+	method: "POST",
+	body: JSON.stringify({
+		type: "setIcon",
+		query: {
+			iconUrl: "dafault.png",
+		},
+	})
+});
+```
+
 More: [https://jsr.io/@evex/singlend/doc/~/Singlend](https://jsr.io/@evex/singlend/doc/~/Singlend)
 
 ## ToDo
