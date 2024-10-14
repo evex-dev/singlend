@@ -1,5 +1,9 @@
+/**
+ * @module @evex/singlend
+ * @description Multiple operations on a single endpoint with zod 🚀
+ */
 import type { JSONValue } from "@hono/hono/utils/types";
-import type { ZodError, ZodSchema } from "zod";
+import { z, type ZodError, type ZodSchema } from "zod";
 import type {
 	AbstractRoutes,
 	BlankRoutes,
@@ -15,9 +19,14 @@ import { findRoute } from "../utils/findRoute.ts";
 import type { Context } from "@hono/hono";
 
 export class Singlend<Routes extends AbstractRoutes = BlankRoutes> {
-	routes: AbstractRoutes = [];
+	private forceStrictSchema = false;
+	public routes: AbstractRoutes = [];
 
-	constructor() {}
+	constructor({
+		forceStrictSchema = true,
+	}) {
+		this.forceStrictSchema = forceStrictSchema;
+	}
 
 	public on<
 		QuerySchemeType extends ZodSchema,
@@ -101,15 +110,21 @@ export class Singlend<Routes extends AbstractRoutes = BlankRoutes> {
 
 			const { queryScheme, handler } = foundRoute;
 
-			const query = await queryScheme.safeParseAsync(json.query);
+			const parsedQuery = await (
+				this.forceStrictSchema
+					? z.getParsedType(queryScheme) === "object"
+						? (queryScheme as z.ZodObject<z.ZodRawShape>).strict()
+						: queryScheme
+					: queryScheme
+			).safeParseAsync(json.query);
 
-			if (!query.success) {
+			if (!parsedQuery.success) {
 				throw this.HTTPExceptions.InvalidQuery;
 			}
 
 			try {
 				const response = await handler(
-					query.data,
+					parsedQuery.data,
 					(response, statusCode = 200) => {
 						return {
 							status: statusCode,
