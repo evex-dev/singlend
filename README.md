@@ -51,3 +51,7 @@ app.use("/api/singlend", singlend.middleware());
 ```
 
 More: [https://jsr.io/@evex/singlend/doc/~/Singlend](https://jsr.io/@evex/singlend/doc/~/Singlend)
+
+## ToDo
+
+- `.group`
