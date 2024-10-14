@@ -1,6 +1,6 @@
 /**
  * @module @evex/singlend
- * @description Multiple operations on a single endpoint with zod 🚀
+ * @description Multiple operations on a single endpoint with hono and zod 🚀
  */
 import type { JSONValue } from "@hono/hono/utils/types";
 import { z, type ZodError, type ZodSchema } from "zod";
@@ -20,7 +20,7 @@ import type { Context } from "@hono/hono";
 
 /**
  * @class Singlend
- * @classdesc Multiple operations on a single endpoint with zod 🚀
+ * @classdesc Multiple operations on a single endpoint with hono and zod 🚀
  */
 export class Singlend<Routes extends AbstractRoutes = BlankRoutes> {
 	private forceStrictSchema = false;

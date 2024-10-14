@@ -1,6 +1,6 @@
 # singlend
 
-Multiple operations on a single endpoint with zod 🚀
+Multiple operations on a single endpoint with hono and zod 🚀
 
 ## Hoe to use
 
@@ -12,7 +12,7 @@ deno add @evex/singlend
 
 ```ts
 import { Hono } from "@hono/hono";
-import { z } from "zod";
+import 
 import { Singlend } from "@evex/singlend";
 
 const app = new Hono();
@@ -49,3 +49,5 @@ singlend
 
 app.use("/api/singlend", singlend.middleware());
 ```
+
+More: [https://jsr.io/@evex/singlend/doc/~/Singlend](https://jsr.io/@evex/singlend/doc/~/Singlend)
