@@ -35,7 +35,7 @@ export class Singlend<Routes extends AbstractRoutes = BlankRoutes> {
 		forceStrictSchema = true,
 	}: {
 		forceStrictSchema?: boolean;
-	}) {
+	} = { forceStrictSchema: true }) {
 		this.forceStrictSchema = forceStrictSchema;
 	}
 
@@ -100,10 +100,10 @@ export class Singlend<Routes extends AbstractRoutes = BlankRoutes> {
 	 * @returns {MiddlewareHandler}
 	 */
 	public middleware({
-		methods = ["POST"],
+		methods,
 	}: {
-		methods?: string[];
-	}): MiddlewareHandler {
+		methods: string[];
+	} = { methods: ["POST"] }): MiddlewareHandler {
 		return async (c, next) => {
 			if (!methods.includes(c.req.method)) {
 				await next();
