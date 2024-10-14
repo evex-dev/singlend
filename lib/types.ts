@@ -5,7 +5,9 @@ import type {
 	StatusCode,
 	SuccessStatusCode,
 } from "@hono/hono/utils/http-status";
-import type { z, ZodSchema } from "zod";
+import type { z, ZodError, ZodSchema } from "zod";
+import type { HTTPException } from "@hono/hono/http-exception";
+import type { Context } from "@hono/hono";
 
 export type PromiseUnion<ValueType> = ValueType | Promise<ValueType>;
 
@@ -53,3 +55,11 @@ export type MergeRoutes<
 	Routes extends AbstractRoutes,
 	_Route extends AbstractRoute,
 > = [...Routes, _Route];
+
+export type HTTPExceptions = {
+	InvalidJSON: HTTPException;
+	InvalidQuery: HTTPException;
+	InvalidQuerySchema: (error: ZodError, c: Context) => HTTPException;
+	NotFoundQueryType: HTTPException;
+	InternalServerError: (error: Error, c: Context) => HTTPException;
+};

@@ -37,3 +37,5 @@ singlend
 app.use("/api/singlend", singlend.middleware());
 
 Deno.serve({ port: 3000 }, app.fetch);
+
+// TODO: Add tests with Deno.test

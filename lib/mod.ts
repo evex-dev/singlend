@@ -3,6 +3,7 @@ import type { ZodError, ZodSchema } from "zod";
 import type {
 	AbstractRoutes,
 	BlankRoutes,
+	HTTPExceptions,
 	MergeRoutes,
 	Route,
 	RouteHandler,
@@ -43,25 +44,27 @@ export class Singlend<Routes extends AbstractRoutes = BlankRoutes> {
 		return this;
 	}
 
-	public HTTPExceptions = {
+	public HTTPExceptions: HTTPExceptions = {
 		InvalidJSON: new HTTPException(400, {
 			message: "Invalid JSON",
 		}),
 		InvalidQuery: new HTTPException(400, {
 			message: "Invalid Query",
 		}),
-		InvalidQuerySchema: (error: ZodError, c: Context) => new HTTPException(400, {
-			message: error.message,
-			res: c.json(error)
-		}),
+		InvalidQuerySchema: (error: ZodError, c: Context) =>
+			new HTTPException(400, {
+				message: error.message,
+				res: c.json(error),
+			}),
 		NotFoundQueryType: new HTTPException(400, {
 			message: "Not Found Query Type",
 		}),
-		InternalServerError: (error: Error, c: Context) => new HTTPException(500, {
-			message: error.message,
-			res: c.json(error)
-		})
-	}
+		InternalServerError: (error: Error, c: Context) =>
+			new HTTPException(500, {
+				message: error.message,
+				res: c.json(error),
+			}),
+	} as const;
 
 	public middleware(): MiddlewareHandler {
 		return async (c, next) => {
@@ -105,37 +108,45 @@ export class Singlend<Routes extends AbstractRoutes = BlankRoutes> {
 			}
 
 			try {
-				const response = await handler(query.data, (response, statusCode = 200) => {
-					return {
-						status: statusCode,
-						response,
-					};
-				}, (response, statusCode = 400) => {
-					return {
-						status: statusCode,
-						response,
-					};
-				}, (response, statusCode) => {
-					return {
-						status: statusCode,
-						response,
-					};
-				})
+				const response = await handler(
+					query.data,
+					(response, statusCode = 200) => {
+						return {
+							status: statusCode,
+							response,
+						};
+					},
+					(response, statusCode = 400) => {
+						return {
+							status: statusCode,
+							response,
+						};
+					},
+					(response, statusCode) => {
+						return {
+							status: statusCode,
+							response,
+						};
+					},
+				);
 
 				return c.text(JSON.stringify(response.response), {
 					status: response.status,
 					headers: new Headers({
 						"Content-Type": "application/json",
 						...c.res.headers,
-					})
+					}),
 				});
-			}catch (e) {
+			} catch (e) {
 				if (e instanceof HTTPException) {
 					throw e;
 				} else if (e instanceof Error) {
 					throw this.HTTPExceptions.InternalServerError(e, c);
-				}else {
-					throw this.HTTPExceptions.InternalServerError(new Error("Unknown error"), c);
+				} else {
+					throw this.HTTPExceptions.InternalServerError(
+						new Error("Unknown error"),
+						c,
+					);
 				}
 			}
 		};

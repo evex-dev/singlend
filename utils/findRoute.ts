@@ -1,16 +1,16 @@
 import type { AbstractRoute, AbstractRoutes } from "../lib/types.ts";
 
 export function findRoute(
-    routes: AbstractRoutes,
-    type: string
+	routes: AbstractRoutes,
+	type: string,
 ): AbstractRoute | null {
-    for (let i = 0, len = routes.length | 0; i < len; i = (i + 1) | 0) {
-        const route = routes[i];
+	for (let i = 0, len = routes.length | 0; i < len; i = (i + 1) | 0) {
+		const route = routes[i];
 
-        if (route.type === type) {
-            return route;
-        }
-    }
+		if (route.type === type) {
+			return route;
+		}
+	}
 
-    return null;
+	return null;
 }
