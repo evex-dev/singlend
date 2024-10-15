@@ -46,7 +46,8 @@ singlend
 				}),
 				(query, value, ok) =>
 					ok({
-						message: "Set icon of " + value.id + " to " +
+
+essage: "Set icon of " + value.id + " to " +
 							query.iconUrl,
 					}),
 			),
