@@ -24,6 +24,7 @@ import type { Context } from "@hono/hono";
 /**
  * @class Singlend
  * @classdesc Multiple operations on a single endpoint with hono and zod 🚀
+ * @description Create a new instance of Singlend
  */
 export class Singlend<
 	Routes extends AbstractRoutes = BlankRoutes,
@@ -251,18 +252,7 @@ export class Singlend<
 
 					value = response.value;
 				} catch (e) {
-					if (e instanceof HTTPException) {
-						return c.text(JSON.stringify(e.res), {
-							status: e.status,
-							headers: new Headers({
-								"Content-Type": "application/json",
-							}),
-						});
-					} else if (e instanceof Error) {
-						throw this.HTTPExceptions.InternalServerError(e, c);
-					} else {
-						throw e;
-					}
+					this.throwException(e, c);
 				}
 
 				foundRoute = route;
@@ -357,17 +347,21 @@ export class Singlend<
 					}),
 				});
 			} catch (e) {
-				if (e instanceof HTTPException) {
-					throw e;
-				} else if (e instanceof Error) {
-					throw this.HTTPExceptions.InternalServerError(e, c);
-				} else {
-					throw this.HTTPExceptions.InternalServerError(
-						new Error("Unknown error"),
-						c,
-					);
-				}
+				this.throwException(e, c);
 			}
 		};
+	}
+
+	private throwException(error: unknown, c: Context) {
+		if (error instanceof HTTPException) {
+			throw error;
+		} else if (error instanceof Error) {
+			throw this.HTTPExceptions.InternalServerError(error, c);
+		} else {
+			throw this.HTTPExceptions.InternalServerError(
+				new Error("Unknown error"),
+				c,
+			);
+		}
 	}
 }
