@@ -70,6 +70,19 @@ app.use("/api/singlend", singlend.middleware());
 // launch server
 ```
 
+```ts
+fetch("/api/singlend", {
+    method: "POST",
+    body: JSON.stringify({
+        type: "setIcon",
+        query: {
+            id: "@114514",
+            iconUrl: "default.png"
+        }
+    })
+})
+```
+
 More:
 [https://jsr.io/@evex/singlend/doc/~/Singlend](https://jsr.io/@evex/singlend/doc/~/Singlend)
 
