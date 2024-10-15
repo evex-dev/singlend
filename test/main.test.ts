@@ -21,7 +21,8 @@ singlend
 				});
 			}
 		},
-		singlend => singlend.on(
+		(singlend) =>
+			singlend.on(
 				"setIcon",
 				z.object({
 					iconUrl: z.string(),

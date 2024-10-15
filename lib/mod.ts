@@ -25,7 +25,10 @@ import type { Context } from "@hono/hono";
  * @class Singlend
  * @classdesc Multiple operations on a single endpoint with hono and zod 🚀
  */
-export class Singlend<Routes extends AbstractRoutes = BlankRoutes, ValueType = never> {
+export class Singlend<
+	Routes extends AbstractRoutes = BlankRoutes,
+	ValueType = never,
+> {
 	private readonly strictSchema: boolean = true;
 	public readonly routes: AbstractRoutes = [];
 
@@ -72,7 +75,6 @@ export class Singlend<Routes extends AbstractRoutes = BlankRoutes, ValueType = n
 			handler,
 		});
 
-		
 		// deno-lint-ignore no-explicit-any
 		return this as any;
 	}
@@ -92,7 +94,9 @@ export class Singlend<Routes extends AbstractRoutes = BlankRoutes, ValueType = n
 	>(
 		queryScheme: QuerySchemeType,
 		handler: GroupHandler<QuerySchemeType, ReturnType, _ValueType>,
-		instanceHandler: (singlend: Singlend<ChildRoutes, _ValueType>) => Singlend<ChildRoutes, _ValueType>,
+		instanceHandler: (
+			singlend: Singlend<ChildRoutes, _ValueType>,
+		) => Singlend<ChildRoutes, _ValueType>,
 	): Singlend<
 		// @ts-expect-error: TS Limitation
 		MergeRoutes<
@@ -100,7 +104,7 @@ export class Singlend<Routes extends AbstractRoutes = BlankRoutes, ValueType = n
 			// @ts-expect-error: TS Limitation
 			Group<ChildRoutes, QuerySchemeType, ReturnType, _ValueType>
 		>,
-	    never
+		never
 	> {
 		this.routes.push({
 			routeType: "group",
@@ -292,7 +296,10 @@ export class Singlend<Routes extends AbstractRoutes = BlankRoutes, ValueType = n
 							};
 						},
 					)
-					: await (handler as unknown as RouteHandler<ZodSchema, JSONValue>)(
+					: await (handler as unknown as RouteHandler<
+						ZodSchema,
+						JSONValue
+					>)(
 						parsedQuery.data,
 						(response, statusCode = 200) => {
 							return {
@@ -335,4 +342,3 @@ export class Singlend<Routes extends AbstractRoutes = BlankRoutes, ValueType = n
 		};
 	}
 }
-

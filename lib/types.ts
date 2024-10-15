@@ -18,9 +18,10 @@ export interface Route<
 	routeType: "route";
 	type: string;
 	queryScheme: QuerySchemeType;
-	handler: RouteHandler<QuerySchemeType, ReturnType> | 
-	// deno-lint-ignore no-explicit-any
-	RouteHandler<QuerySchemeType, ReturnType, any>;
+	handler:
+		| RouteHandler<QuerySchemeType, ReturnType>
+		| // deno-lint-ignore no-explicit-any
+		RouteHandler<QuerySchemeType, ReturnType, any>;
 }
 
 export interface Group<
