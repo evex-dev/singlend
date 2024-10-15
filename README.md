@@ -67,4 +67,4 @@ More:
 
 ## ToDo
 
-- `.group`
+- Support `hc`

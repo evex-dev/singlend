@@ -15,19 +15,84 @@ export interface Route<
 	QuerySchemeType extends ZodSchema,
 	ReturnType extends JSONValue,
 > {
+	routeType: "route";
 	type: string;
 	queryScheme: QuerySchemeType;
-	handler: RouteHandler<QuerySchemeType, ReturnType>;
+	handler: RouteHandler<QuerySchemeType, ReturnType> | 
+	// deno-lint-ignore no-explicit-any
+	RouteHandler<QuerySchemeType, ReturnType, any>;
 }
+
+export interface Group<
+	ChildRoutes extends AbstractRoute[],
+	QuerySchemeType extends ZodSchema,
+	ReturnType extends JSONValue,
+	ValueType,
+> {
+	routeType: "group";
+	routes: ChildRoutes;
+	queryScheme: QuerySchemeType;
+	handler: GroupHandler<QuerySchemeType, ReturnType, ValueType>;
+}
+
+export type IsNever<T> = [T] extends [never] ? true : false;
 
 export type RouteHandler<
 	QuerySchemeType extends ZodSchema,
 	ReturnType extends JSONValue,
+	ValueType = never,
+> = IsNever<ValueType> extends true ? ((
+		query: z.infer<QuerySchemeType>,
+		ok: (response: ReturnType, status?: SuccessStatusCode) => {
+			status: SuccessStatusCode;
+			response: ReturnType;
+		},
+		error: (
+			response: ReturnType,
+			status?: ClientErrorStatusCode | ServerErrorStatusCode,
+		) => {
+			status: ClientErrorStatusCode | ServerErrorStatusCode;
+			response: ReturnType;
+		},
+		response: (response: ReturnType, status: StatusCode) => {
+			status: StatusCode;
+			response: ReturnType;
+		},
+	) => PromiseUnion<{
+		status: StatusCode;
+		response: ReturnType;
+	}>)
+	: ((
+		query: z.infer<QuerySchemeType>,
+		value: ValueType,
+		ok: (response: ReturnType, status?: SuccessStatusCode) => {
+			status: SuccessStatusCode;
+			response: ReturnType;
+		},
+		error: (
+			response: ReturnType,
+			status?: ClientErrorStatusCode | ServerErrorStatusCode,
+		) => {
+			status: ClientErrorStatusCode | ServerErrorStatusCode;
+			response: ReturnType;
+		},
+		response: (response: ReturnType, status: StatusCode) => {
+			status: StatusCode;
+			response: ReturnType;
+		},
+	) => PromiseUnion<{
+		status: StatusCode;
+		response: ReturnType;
+	}>);
+
+export type GroupHandler<
+	QuerySchemeType extends ZodSchema,
+	ReturnType extends JSONValue,
+	ValueType,
 > = (
 	query: z.infer<QuerySchemeType>,
-	ok: (response: ReturnType, status?: SuccessStatusCode) => {
-		status: SuccessStatusCode;
-		response: ReturnType;
+	next: <ValueType>(value: ValueType) => {
+		value: ValueType;
 	},
 	error: (
 		response: ReturnType,
@@ -40,20 +105,27 @@ export type RouteHandler<
 		status: StatusCode;
 		response: ReturnType;
 	},
-) => PromiseUnion<{
-	status: StatusCode;
-	response: ReturnType;
-}>;
+) => PromiseUnion<
+	{
+		status: StatusCode;
+		response: ReturnType;
+	} | {
+		value: ValueType;
+	}
+>;
 
 export type AbstractRoute = Route<ZodSchema, JSONValue>;
 
-export type AbstractRoutes = AbstractRoute[];
+// deno-lint-ignore no-explicit-any
+export type AbstractGroup = Group<AbstractRoute[], ZodSchema, JSONValue, any>;
+
+export type AbstractRoutes = (AbstractRoute | AbstractGroup)[];
 
 export type BlankRoutes = [];
 
 export type MergeRoutes<
 	Routes extends AbstractRoutes,
-	_Route extends AbstractRoute,
+	_Route extends AbstractRoute | AbstractGroup,
 > = [...Routes, _Route];
 
 export type HTTPExceptions = {

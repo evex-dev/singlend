@@ -5,8 +5,11 @@
 import type { JSONValue } from "@hono/hono/utils/types";
 import { z, type ZodError, type ZodSchema } from "zod";
 import type {
+	AbstractRoute,
 	AbstractRoutes,
 	BlankRoutes,
+	Group,
+	GroupHandler,
 	HTTPExceptions,
 	MergeRoutes,
 	Route,
@@ -22,21 +25,21 @@ import type { Context } from "@hono/hono";
  * @class Singlend
  * @classdesc Multiple operations on a single endpoint with hono and zod 🚀
  */
-export class Singlend<Routes extends AbstractRoutes = BlankRoutes> {
-	private forceStrictSchema = false;
-	public routes: AbstractRoutes = [];
+export class Singlend<Routes extends AbstractRoutes = BlankRoutes, ValueType = never> {
+	private readonly strictSchema: boolean = true;
+	public readonly routes: AbstractRoutes = [];
 
 	/**
 	 * @description Create a new instance of Singlend
 	 * @param {Object} [options]
-	 * @param {boolean} [options.forceStrictSchema=true] - Force the zod schema to be strict
+	 * @param {boolean} [options.strictSchema=true] - The zod schema to be strict
 	 */
 	constructor({
-		forceStrictSchema = true,
+		strictSchema = true,
 	}: {
-		forceStrictSchema?: boolean;
-	} = { forceStrictSchema: true }) {
-		this.forceStrictSchema = forceStrictSchema;
+		strictSchema?: boolean;
+	} = { strictSchema: true }) {
+		this.strictSchema = strictSchema;
 	}
 
 	/**
@@ -52,23 +55,64 @@ export class Singlend<Routes extends AbstractRoutes = BlankRoutes> {
 	>(
 		type: string,
 		queryScheme: QuerySchemeType,
-		handler: RouteHandler<QuerySchemeType, ReturnType>,
+		handler: RouteHandler<QuerySchemeType, ReturnType, ValueType>,
 	): Singlend<
 		// @ts-expect-error: TS Limitation
 		MergeRoutes<
 			Routes,
-			// @ts-expect-error: TS Limitation
-			Route<QuerySchemeType, ReturnType>
+			Route<QuerySchemeType, ReturnType>,
+			never
 		>
 	> {
 		this.routes.push({
+			routeType: "route",
 			type,
 			queryScheme,
 			// @ts-expect-error: TS Limitation
 			handler,
 		});
 
-		return this;
+		
+		// deno-lint-ignore no-explicit-any
+		return this as any;
+	}
+
+	/**
+	 * @description Add a new group of routes to the singlend
+	 * @param queryScheme - The zod schema for the query
+	 * @param handler - The handler for the group
+	 * @param childRoutes - The child routes of the group
+	 * @returns The same instance of Singlend, with the new group added
+	 */
+	public group<
+		ChildRoutes extends AbstractRoute[],
+		QuerySchemeType extends ZodSchema,
+		ReturnType extends JSONValue,
+		_ValueType,
+	>(
+		queryScheme: QuerySchemeType,
+		handler: GroupHandler<QuerySchemeType, ReturnType, _ValueType>,
+		instanceHandler: (singlend: Singlend<ChildRoutes, _ValueType>) => Singlend<ChildRoutes, _ValueType>,
+	): Singlend<
+		// @ts-expect-error: TS Limitation
+		MergeRoutes<
+			Routes,
+			// @ts-expect-error: TS Limitation
+			Group<ChildRoutes, QuerySchemeType, ReturnType, _ValueType>
+		>,
+	    never
+	> {
+		this.routes.push({
+			routeType: "group",
+			// deno-lint-ignore no-explicit-any
+			routes: instanceHandler(this as any).routes as AbstractRoute[],
+			queryScheme,
+			// @ts-expect-error: TS Limitation
+			handler,
+		});
+
+		// deno-lint-ignore no-explicit-any
+		return this as any;
 	}
 
 	public HTTPExceptions: HTTPExceptions = {
@@ -89,7 +133,10 @@ export class Singlend<Routes extends AbstractRoutes = BlankRoutes> {
 		InternalServerError: (error: Error, c: Context) =>
 			new HTTPException(500, {
 				message: error.message,
-				res: c.json(error),
+				res: c.json({
+					name: error.name,
+					message: error.message,
+				}),
 			}),
 	} as const;
 
@@ -130,16 +177,82 @@ export class Singlend<Routes extends AbstractRoutes = BlankRoutes> {
 				throw this.HTTPExceptions.InvalidQuery;
 			}
 
-			const foundRoute = findRoute(this.routes, json.type);
+			let foundRoute = findRoute(this.routes, json.type);
 
 			if (!foundRoute) {
 				throw this.HTTPExceptions.NotFoundQueryType;
 			}
 
+			// deno-lint-ignore no-explicit-any
+			let value: any = null;
+
+			if (Array.isArray(foundRoute)) {
+				const [group, route] = foundRoute;
+
+				const { queryScheme, handler } = group;
+
+				const parsedQuery = await queryScheme.safeParseAsync(
+					json.query,
+				);
+
+				if (!parsedQuery.success) {
+					throw this.HTTPExceptions.InvalidQuery;
+				}
+
+				try {
+					const response = await handler(
+						parsedQuery.data,
+						(value) => {
+							return {
+								value,
+							};
+						},
+						(response, statusCode = 400) => {
+							return {
+								status: statusCode,
+								response,
+							};
+						},
+						(response, statusCode) => {
+							return {
+								status: statusCode,
+								response,
+							};
+						},
+					);
+
+					if ("status" in response) {
+						return c.text(JSON.stringify(response.response), {
+							status: response.status,
+							headers: new Headers({
+								"Content-Type": "application/json",
+							}),
+						});
+					}
+
+					value = response.value;
+				} catch (e) {
+					if (e instanceof HTTPException) {
+						return c.text(JSON.stringify(e.res), {
+							status: e.status,
+							headers: new Headers({
+								"Content-Type": "application/json",
+							}),
+						});
+					} else if (e instanceof Error) {
+						throw this.HTTPExceptions.InternalServerError(e, c);
+					} else {
+						throw e;
+					}
+				}
+
+				foundRoute = route;
+			}
+
 			const { queryScheme, handler } = foundRoute;
 
 			const parsedQuery = await (
-				this.forceStrictSchema
+				this.strictSchema
 					? z.getParsedType(queryScheme) === "object"
 						? (queryScheme as z.ZodObject<z.ZodRawShape>).strict()
 						: queryScheme
@@ -151,33 +264,60 @@ export class Singlend<Routes extends AbstractRoutes = BlankRoutes> {
 			}
 
 			try {
-				const response = await handler(
-					parsedQuery.data,
-					(response, statusCode = 200) => {
-						return {
-							status: statusCode,
-							response,
-						};
-					},
-					(response, statusCode = 400) => {
-						return {
-							status: statusCode,
-							response,
-						};
-					},
-					(response, statusCode) => {
-						return {
-							status: statusCode,
-							response,
-						};
-					},
-				);
+				const response = value
+					? await (handler as unknown as RouteHandler<
+						ZodSchema,
+						JSONValue,
+						// deno-lint-ignore no-explicit-any
+						any
+					>)(
+						parsedQuery.data,
+						value,
+						(response, statusCode = 200) => {
+							return {
+								status: statusCode,
+								response,
+							};
+						},
+						(response, statusCode = 400) => {
+							return {
+								status: statusCode,
+								response,
+							};
+						},
+						(response, statusCode) => {
+							return {
+								status: statusCode,
+								response,
+							};
+						},
+					)
+					: await (handler as unknown as RouteHandler<ZodSchema, JSONValue>)(
+						parsedQuery.data,
+						(response, statusCode = 200) => {
+							return {
+								status: statusCode,
+								response,
+							};
+						},
+						(response, statusCode = 400) => {
+							return {
+								status: statusCode,
+								response,
+							};
+						},
+						(response, statusCode) => {
+							return {
+								status: statusCode,
+								response,
+							};
+						},
+					);
 
 				return c.text(JSON.stringify(response.response), {
 					status: response.status,
 					headers: new Headers({
 						"Content-Type": "application/json",
-						...c.res.headers,
 					}),
 				});
 			} catch (e) {
@@ -195,3 +335,4 @@ export class Singlend<Routes extends AbstractRoutes = BlankRoutes> {
 		};
 	}
 }
+
