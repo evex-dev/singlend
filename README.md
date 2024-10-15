@@ -1,10 +1,10 @@
 # singlend
 
-Multiple operations on a single endpoint with hono and zod 🚀  
+Multiple operations on a single endpoint with hono and zod 🚀
 
-When using singlend, headers and cookies are anti-patterns ✖ 
-Everything is managed by the body, so session should be stored in localStorage, etc.  
-It is more secure 🔓  
+When using singlend, headers and cookies are anti-patterns ✖ Everything is
+managed by the body, so session should be stored in localStorage, etc.\
+It is more secure 🔓
 
 ## Hoe to use
 
@@ -46,8 +46,7 @@ singlend
 				}),
 				(query, value, ok) =>
 					ok({
-
-essage: "Set icon of " + value.id + " to " +
+						message: "Set icon of " + value.id + " to " +
 							query.iconUrl,
 					}),
 			),
@@ -77,15 +76,15 @@ app.use("/api/singlend", singlend.middleware());
 
 ```ts
 fetch("/api/singlend", {
-    method: "POST",
-    body: JSON.stringify({
-        type: "setIcon",
-        query: {
-            id: "@114514",
-            iconUrl: "default.png"
-        }
-    })
-})
+	method: "POST",
+	body: JSON.stringify({
+		type: "setIcon",
+		query: {
+			id: "@114514",
+			iconUrl: "default.png",
+		},
+	}),
+});
 ```
 
 More:
