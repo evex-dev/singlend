@@ -1,6 +1,6 @@
 {
 	"name": "@evex/singlend",
-	"version": "0.1.0",
+	"version": "0.0.0",
 	"exports": {
 		".": "./lib/mod.ts"
 	},
