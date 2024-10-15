@@ -68,3 +68,4 @@ More:
 ## ToDo
 
 - Support `hc`
+- Clean up dupl code

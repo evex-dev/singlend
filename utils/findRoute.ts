@@ -7,18 +7,18 @@ import type {
 export function findRoute(
 	routes: AbstractRoutes,
 	type: string,
+	isGroup = false,
 ): AbstractRoute | [AbstractGroup, AbstractRoute] | null {
-	for (let i = 0, len = routes.length | 0; i < len; i = (i + 1) | 0) {
+	for (let i = 0 | 0, len = routes.length | 0; i < len; i = (i + 1) | 0) {
 		const route = routes[i];
 
-		if (route.routeType === "group") {
-			const result = findRoute(route.routes, type);
+		if (route.routeType === "group" && !isGroup) {
+			const result = findRoute(route.routes, type, true);
 
-			// NOTE: WILL SUPPORT NESTED GROUP
-			if (result && !Array.isArray(result)) {
-				return [route, result];
+			if (result) {
+				return [route, result as AbstractRoute];
 			}
-		} else {
+		} else if (route.routeType === "route") {
 			if (route.type === type) {
 				return route;
 			}

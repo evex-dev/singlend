@@ -108,8 +108,11 @@ export class Singlend<
 	> {
 		this.routes.push({
 			routeType: "group",
-			// deno-lint-ignore no-explicit-any
-			routes: instanceHandler(this as any).routes as AbstractRoute[],
+			routes: instanceHandler(
+				new Singlend({
+					strictSchema: this.strictSchema,
+				}),
+			).routes as AbstractRoute[],
 			queryScheme,
 			// @ts-expect-error: TS Limitation
 			handler,
@@ -189,18 +192,24 @@ export class Singlend<
 
 			// deno-lint-ignore no-explicit-any
 			let value: any = null;
+			let groupQueryScheme: ZodSchema | null = null;
 
 			if (Array.isArray(foundRoute)) {
 				const [group, route] = foundRoute;
 
 				const { queryScheme, handler } = group;
 
+				groupQueryScheme = queryScheme;
+
 				const parsedQuery = await queryScheme.safeParseAsync(
 					json.query,
 				);
 
 				if (!parsedQuery.success) {
-					throw this.HTTPExceptions.InvalidQuery;
+					throw this.HTTPExceptions.InvalidQuerySchema(
+						parsedQuery.error,
+						c,
+					);
 				}
 
 				try {
@@ -256,15 +265,27 @@ export class Singlend<
 			const { queryScheme, handler } = foundRoute;
 
 			const parsedQuery = await (
-				this.strictSchema
-					? z.getParsedType(queryScheme) === "object"
-						? (queryScheme as z.ZodObject<z.ZodRawShape>).strict()
-						: queryScheme
-					: queryScheme
+				groupQueryScheme
+					? (this.strictSchema
+						? z.getParsedType(queryScheme) === "object"
+							? (queryScheme as z.ZodObject<z.ZodRawShape>)
+								.merge(groupQueryScheme as z.AnyZodObject)
+								.strict()
+							: queryScheme
+						: queryScheme)
+					: (this.strictSchema
+						? z.getParsedType(queryScheme) === "object"
+							? (queryScheme as z.ZodObject<z.ZodRawShape>)
+								.strict()
+							: queryScheme
+						: queryScheme)
 			).safeParseAsync(json.query);
 
 			if (!parsedQuery.success) {
-				throw this.HTTPExceptions.InvalidQuery;
+				throw this.HTTPExceptions.InvalidQuerySchema(
+					parsedQuery.error,
+					c,
+				);
 			}
 
 			try {
