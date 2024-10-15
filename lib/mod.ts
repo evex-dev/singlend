@@ -28,6 +28,7 @@ import type { Context } from "@hono/hono";
 export class Singlend<
 	Routes extends AbstractRoutes = BlankRoutes,
 	ValueType = never,
+	GroupQuerySchemeType extends ZodSchema = never,
 > {
 	private readonly strictSchema: boolean = true;
 	public readonly routes: AbstractRoutes = [];
@@ -58,7 +59,12 @@ export class Singlend<
 	>(
 		type: string,
 		queryScheme: QuerySchemeType,
-		handler: RouteHandler<QuerySchemeType, ReturnType, ValueType>,
+		handler: RouteHandler<
+			QuerySchemeType,
+			ReturnType,
+			ValueType,
+			GroupQuerySchemeType
+		>,
 	): Singlend<
 		// @ts-expect-error: TS Limitation
 		MergeRoutes<
@@ -95,8 +101,8 @@ export class Singlend<
 		queryScheme: QuerySchemeType,
 		handler: GroupHandler<QuerySchemeType, ReturnType, _ValueType>,
 		instanceHandler: (
-			singlend: Singlend<ChildRoutes, _ValueType>,
-		) => Singlend<ChildRoutes, _ValueType>,
+			singlend: Singlend<ChildRoutes, _ValueType, QuerySchemeType>,
+		) => Singlend<ChildRoutes, _ValueType, QuerySchemeType>,
 	): Singlend<
 		// @ts-expect-error: TS Limitation
 		MergeRoutes<
@@ -293,6 +299,8 @@ export class Singlend<
 					? await (handler as unknown as RouteHandler<
 						ZodSchema,
 						JSONValue,
+						// deno-lint-ignore no-explicit-any
+						any,
 						// deno-lint-ignore no-explicit-any
 						any
 					>)(

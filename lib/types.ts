@@ -37,12 +37,21 @@ export interface Group<
 }
 
 export type IsNever<T> = [T] extends [never] ? true : false;
+export type IsAllNever<T extends unknown[]> = [T[number]] extends [never] ? true
+	: false;
+export type Prettify<T> =
+	& {
+		[K in keyof T]: T[K];
+	}
+	// deno-lint-ignore ban-types
+	& {};
 
 export type RouteHandler<
 	QuerySchemeType extends ZodSchema,
 	ReturnType extends JSONValue,
 	ValueType = never,
-> = IsNever<ValueType> extends true ? ((
+	GroupQueryType extends ZodSchema = never,
+> = IsAllNever<[ValueType, GroupQueryType]> extends true ? ((
 		query: z.infer<QuerySchemeType>,
 		ok: (response: ReturnType, status?: SuccessStatusCode) => {
 			status: SuccessStatusCode;
@@ -64,7 +73,7 @@ export type RouteHandler<
 		response: ReturnType;
 	}>)
 	: ((
-		query: z.infer<QuerySchemeType>,
+		query: Prettify<z.infer<QuerySchemeType> & z.infer<GroupQueryType>>,
 		value: ValueType,
 		ok: (response: ReturnType, status?: SuccessStatusCode) => {
 			status: SuccessStatusCode;
