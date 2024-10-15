@@ -12,22 +12,40 @@ deno add @evex/singlend
 
 ```ts
 import { Hono } from "@hono/hono";
-import 
+import { z } from "zod";
 import { Singlend } from "@evex/singlend";
 
 const app = new Hono();
 const singlend = new Singlend();
 
 singlend
-	.on(
-		"setIcon",
+	.group(
 		z.object({
-			iconUrl: z.string(),
+			id: z.string(),
 		}),
-		(query, ok) =>
-			ok({
-				message: "Set icon to " + query.iconUrl,
-			}),
+		(query, next, error) => {
+			if (!query.id.startsWith("@")) {
+				return error({
+					message: "Invalid id",
+				});
+			} else {
+				return next({
+					id: query.id.slice(1),
+				});
+			}
+		},
+		(singlend) =>
+			singlend.on(
+				"setIcon",
+				z.object({
+					iconUrl: z.string(),
+				}),
+				(query, value, ok) =>
+					ok({
+						message: "Set icon of " + value.id + " to " +
+							query.iconUrl,
+					}),
+			),
 	)
 	.on(
 		"setBackgroundColor",
@@ -48,18 +66,8 @@ singlend
 	);
 
 app.use("/api/singlend", singlend.middleware());
-```
 
-```ts
-fetch("/api/singlend", {
-	method: "POST",
-	body: JSON.stringify({
-		type: "setIcon",
-		query: {
-			iconUrl: "dafault.png",
-		},
-	}),
-});
+// launch server
 ```
 
 More:
@@ -67,4 +75,5 @@ More:
 
 ## ToDo
 
-- `.group`
+- Support `hc`
+- Clean up dupl code
