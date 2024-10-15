@@ -1,6 +1,10 @@
 # singlend
 
-Multiple operations on a single endpoint with hono and zod 🚀
+Multiple operations on a single endpoint with hono and zod 🚀  
+
+When using singlend, headers and cookies are anti-patterns ✖ 
+Everything is managed by the body, so session should be stored in localStorage, etc.  
+It is more secure 🔓  
 
 ## Hoe to use
 
