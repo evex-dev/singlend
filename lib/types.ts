@@ -135,8 +135,8 @@ export type BlankRoutes = [];
 
 export type MergeRoutes<
 	Routes extends AbstractRoutes,
-	_Route extends AbstractRoute | AbstractGroup,
-> = [...Routes, _Route];
+	_Routes extends AbstractRoutes,
+> = [...Routes, ..._Routes];
 
 export type HTTPExceptions = {
 	InvalidJSON: HTTPException;

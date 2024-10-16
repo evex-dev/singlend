@@ -22,6 +22,16 @@ import { Singlend } from "@evex/singlend";
 const app = new Hono();
 const singlend = new Singlend();
 
+const sub = singlend.on(
+	"getIcon",
+	z.object({}),
+	(_query, ok) => {
+		return ok({
+			iconUrl: "default.png",
+		})
+	},
+)
+
 singlend
 	.group(
 		z.object({
@@ -67,8 +77,9 @@ singlend
 				message: "Set background color to " + query.backgroundColor,
 			});
 		},
-	);
-
+	)
+	.mount(sub);
+	
 app.use("/api/singlend", singlend.middleware());
 
 // launch server

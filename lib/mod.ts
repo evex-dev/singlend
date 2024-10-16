@@ -70,8 +70,8 @@ export class Singlend<
 		// @ts-expect-error: TS Limitation
 		MergeRoutes<
 			Routes,
-			Route<QuerySchemeType, ReturnType>,
-			never
+			// @ts-expect-error: TS Limitation
+			[Route<QuerySchemeType, ReturnType>]
 		>
 	> {
 		this.routes.push({
@@ -109,7 +109,7 @@ export class Singlend<
 		MergeRoutes<
 			Routes,
 			// @ts-expect-error: TS Limitation
-			Group<ChildRoutes, QuerySchemeType, ReturnType, _ValueType>
+			[Group<ChildRoutes, QuerySchemeType, ReturnType, _ValueType>]
 		>,
 		never
 	> {
@@ -127,6 +127,26 @@ export class Singlend<
 
 		// deno-lint-ignore no-explicit-any
 		return this as any;
+	}
+
+	// deno-lint-ignore no-explicit-any
+	public mount<Instances extends Singlend<AbstractRoutes, any, any>[]>(
+		...instances: Instances
+	): Singlend<
+		MergeRoutes<
+			Routes,
+			Instances extends (infer I)[]
+				? I extends Singlend ? I["routes"] : []
+				: []
+		>,
+		ValueType,
+		GroupQuerySchemeType
+	> {
+		for (const instance of instances) {
+			this.routes.push(...instance.routes);
+		}
+
+		return this;
 	}
 
 	public HTTPExceptions: HTTPExceptions = {
