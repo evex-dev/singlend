@@ -8,15 +8,21 @@ import type {
 	AbstractRoute,
 	AbstractRoutes,
 	BlankRoutes,
+	ExtractQueryTypesFromRoutes,
 	Group,
 	GroupHandler,
 	HTTPExceptions,
 	MergeRoutes,
+	Prettify,
 	Route,
 	RouteHandler,
 } from "./types.ts";
 import { HTTPException } from "@hono/hono/http-exception";
-import type { MiddlewareHandler } from "@hono/hono/types";
+import type {
+	Handler,
+	HandlerResponse,
+	ValidationTargets,
+} from "@hono/hono/types";
 import { safeJsonParse } from "../utils/safeJsonParse.ts";
 import { findRoute } from "../utils/findRoute.ts";
 import type { Context } from "@hono/hono";
@@ -55,10 +61,11 @@ export class Singlend<
 	 * @returns The same instance of Singlend, with the new route added
 	 */
 	public on<
+		Type extends string,
 		QuerySchemeType extends ZodSchema,
 		ReturnType extends JSONValue,
 	>(
-		type: string,
+		type: Type,
 		queryScheme: QuerySchemeType,
 		handler: RouteHandler<
 			QuerySchemeType,
@@ -71,7 +78,7 @@ export class Singlend<
 		MergeRoutes<
 			Routes,
 			// @ts-expect-error: TS Limitation
-			[Route<QuerySchemeType, ReturnType>]
+			[Route<Type, QuerySchemeType, ReturnType>]
 		>
 	> {
 		this.routes.push({
@@ -102,7 +109,7 @@ export class Singlend<
 		queryScheme: QuerySchemeType,
 		handler: GroupHandler<QuerySchemeType, ReturnType, _ValueType>,
 		instanceHandler: (
-			singlend: Singlend<ChildRoutes, _ValueType, QuerySchemeType>,
+			singlend: Singlend<[], _ValueType, QuerySchemeType>,
 		) => Singlend<ChildRoutes, _ValueType, QuerySchemeType>,
 	): Singlend<
 		// @ts-expect-error: TS Limitation
@@ -129,6 +136,11 @@ export class Singlend<
 		return this as any;
 	}
 
+	/**
+	 * @description Mount multiple instances of Singlend to the current instance.
+	 * @param instances - The instances to mount
+	 * @returns The same instance of Singlend, with the new routes added
+	 */
 	// deno-lint-ignore no-explicit-any
 	public mount<Instances extends Singlend<AbstractRoutes, any, any>[]>(
 		...instances: Instances
@@ -136,7 +148,8 @@ export class Singlend<
 		MergeRoutes<
 			Routes,
 			Instances extends (infer I)[]
-				? I extends Singlend ? I["routes"] : []
+				// deno-lint-ignore no-explicit-any
+				? I extends Singlend<infer _Routes, any, any> ? _Routes : []
 				: []
 		>,
 		ValueType,
@@ -146,7 +159,8 @@ export class Singlend<
 			this.routes.push(...instance.routes);
 		}
 
-		return this;
+		// deno-lint-ignore no-explicit-any
+		return this as any;
 	}
 
 	public HTTPExceptions: HTTPExceptions = {
@@ -175,22 +189,20 @@ export class Singlend<
 	} as const;
 
 	/**
-	 * @description Middleware to handle singlend request
-	 * @param {Object} [options]
-	 * @param {string[]} [options.methods=["POST"]] - List of methods to handle
-	 * @returns {MiddlewareHandler}
+	 * @description Get the handler for the singlend
+	 * @returns The handler for the singlend
 	 */
-	public middleware({
-		methods,
-	}: {
-		methods: string[];
-	} = { methods: ["POST"] }): MiddlewareHandler {
-		return async (c, next) => {
-			if (!methods.includes(c.req.method)) {
-				await next();
-				return;
+	// deno-lint-ignore no-explicit-any
+	public handler(): Handler<any, any, {
+		in: Prettify<
+			Omit<Partial<ValidationTargets>, "json"> & {
+				// deno-lint-ignore ban-types
+				json: ExtractQueryTypesFromRoutes<Routes> | (string & {});
 			}
-
+		>;
+		outputFormat: "json";
+	}, HandlerResponse<JSONValue>> {
+		return async (c: Context) => {
 			const jsonString = await c.req.text();
 
 			const json = safeJsonParse(jsonString);
@@ -369,6 +381,8 @@ export class Singlend<
 			} catch (e) {
 				this.throwException(e, c);
 			}
+
+			return c.notFound();
 		};
 	}
 

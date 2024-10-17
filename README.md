@@ -6,6 +6,10 @@ When using singlend, headers and cookies are anti-patterns ✖ Everything is
 managed by the body, so session should be stored in localStorage, etc.\
 It is more secure 🔓
 
+- 🔥 Support Hono RPC Client
+- 🌪️ Fastest
+- 🧩 Highly Typed
+
 ## Hoe to use
 
 ```bash
@@ -18,6 +22,7 @@ deno add @evex/singlend
 import { Hono } from "@hono/hono";
 import { z } from "zod";
 import { Singlend } from "@evex/singlend";
+import { hc } from "@hono/hono/client";
 
 const app = new Hono();
 const singlend = new Singlend();
@@ -28,11 +33,11 @@ const sub = singlend.on(
 	(_query, ok) => {
 		return ok({
 			iconUrl: "default.png",
-		})
+		});
 	},
-)
+);
 
-singlend
+const singleRoute = singlend
 	.group(
 		z.object({
 			id: z.string(),
@@ -79,10 +84,25 @@ singlend
 		},
 	)
 	.mount(sub);
-	
-app.use("/api/singlend", singlend.middleware());
 
-// launch server
+const routes = app.post("/api/singlend", singleRoute.handler());
+
+Deno.serve({ port: 3000 }, app.fetch);
+
+// in client
+const client = hc<typeof routes>("/");
+
+const response = await client.api.singlend.$post({
+	json: {
+		type: "setIcon",
+		query: {
+			id: "@12345",
+			iconUrl: "default.png",
+		},
+	},
+});
+
+const data = await response.json();
 ```
 
 ```ts
@@ -101,7 +121,3 @@ fetch("/api/singlend", {
 More:
 [https://jsr.io/@evex/singlend/doc/~/Singlend](https://jsr.io/@evex/singlend/doc/~/Singlend)
 
-## ToDo
-
-- Support `hc`
-- Clean up dupl code
