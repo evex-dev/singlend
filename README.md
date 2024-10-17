@@ -10,7 +10,7 @@ It is more secure 🔓
 - 🌪️ Fastest
 - 🧩 Highly Typed
 
-## Hoe to use
+## How to use
 
 ```bash
 npx jsr add @evex/singlend
@@ -121,3 +121,5 @@ fetch("/api/singlend", {
 More:
 [https://jsr.io/@evex/singlend/doc/~/Singlend](https://jsr.io/@evex/singlend/doc/~/Singlend)
 
+## Authors
+- @EdamAme-x 
