@@ -193,7 +193,7 @@ export class Singlend<
 	 * @returns The handler for the singlend
 	 */
 	// deno-lint-ignore no-explicit-any
-	public handler(): Handler<any, any, {
+	public handler(): Handler<string, any, {
 		in: Prettify<
 			Omit<Partial<ValidationTargets>, "json"> & {
 				// deno-lint-ignore ban-types
