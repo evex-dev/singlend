@@ -8,6 +8,7 @@ It is more secure 🔓
 
 - 🔥 Support Hono RPC Client
 - 🌪️ Fastest
+- 🌍️ Support All Runtime
 - 🧩 Highly Typed
 
 ## How to use
@@ -87,7 +88,7 @@ const singleRoute = singlend
 
 const routes = app.post("/api/singlend", singleRoute.handler());
 
-Deno.serve({ port: 3000 }, app.fetch);
+// launch server
 
 // in client
 const client = hc<typeof routes>("/");
