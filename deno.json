@@ -16,5 +16,8 @@
 		"proseWrap": "always",
 		"semiColons": true,
 		"singleQuote": false
+	},
+	"compilerOptions": {
+		"noErrorTruncation": true
 	}
 }
